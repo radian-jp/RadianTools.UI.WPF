@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AssemblyName></AssemblyName>
+    <Platforms>AnyCPU</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PathMap>$(MSBuildProjectDirectory)=.</PathMap>
+    <Version>0.0.1</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Company>RadianTools</Company>
+    <PackageTags>C#;c-sharp;csharp;RadianTools;windows;WPF</PackageTags>
+    <Authors>radian</Authors>
+    <Title>$(AssemblyName)</Title>
+    <Description>A collection of reusable UI controls and utilities for WPF applications.</Description>
+    <Copyright>Copyright (c) 2025 radian</Copyright>
+    <PackageProjectUrl>https://github.com/radian-jp/RadianTools.UI.WPF</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/radian-jp/RadianTools.UI.WPF</RepositoryUrl>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Analyzer Include="Generator\RadianTools.Generators.UnmanagedStructGenerator.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0-rc.1.25451.107" />
+  </ItemGroup>
+  
+</Project>
