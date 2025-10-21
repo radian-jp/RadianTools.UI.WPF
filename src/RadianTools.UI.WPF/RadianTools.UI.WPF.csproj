@@ -33,11 +33,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Analyzer Include="Generator\RadianTools.Generators.UnmanagedStructGenerator.dll" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0-rc.1.25451.107" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="10.0.0-rc.1.25451.107" />
+    <ProjectReference Include="..\RadianTools.Generators.UnmanagedStructGenerator\src\RadianTools.Generators.UnmanagedStructGenerator\RadianTools.Generators.UnmanagedStructGenerator.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   
 </Project>

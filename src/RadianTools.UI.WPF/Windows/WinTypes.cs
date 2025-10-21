@@ -559,7 +559,7 @@ internal partial struct HICON : IDisposable
     }
 }
 
-[NativeHandle("global::RadianTools.UI.WPF.ITEMIDLIST*")]
+[NativeHandle(typeof(ITEMIDLIST*))]
 internal partial struct PIDL
 {
 }

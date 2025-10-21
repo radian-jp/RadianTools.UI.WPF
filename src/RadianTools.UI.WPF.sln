@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadianTools.UI.WPF.Sample",
 		{40DBCBEF-4329-45B2-A582-38E834910331} = {40DBCBEF-4329-45B2-A582-38E834910331}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadianTools.Generators.UnmanagedStructGenerator", "RadianTools.Generators.UnmanagedStructGenerator\src\RadianTools.Generators.UnmanagedStructGenerator\RadianTools.Generators.UnmanagedStructGenerator.csproj", "{653C8FE9-6DAF-8855-8948-252D7AD26375}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,10 +26,10 @@ Global
 		{61430114-48F0-4BDA-AB81-CECE64D6A664}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61430114-48F0-4BDA-AB81-CECE64D6A664}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61430114-48F0-4BDA-AB81-CECE64D6A664}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F608D205-BDD9-74B4-2297-6F4F9017FD62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F608D205-BDD9-74B4-2297-6F4F9017FD62}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F608D205-BDD9-74B4-2297-6F4F9017FD62}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F608D205-BDD9-74B4-2297-6F4F9017FD62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{653C8FE9-6DAF-8855-8948-252D7AD26375}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{653C8FE9-6DAF-8855-8948-252D7AD26375}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{653C8FE9-6DAF-8855-8948-252D7AD26375}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{653C8FE9-6DAF-8855-8948-252D7AD26375}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
