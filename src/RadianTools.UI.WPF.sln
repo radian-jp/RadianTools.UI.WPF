@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadianTools.UI.WPF.Sample",
 		{40DBCBEF-4329-45B2-A582-38E834910331} = {40DBCBEF-4329-45B2-A582-38E834910331}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadianTools.Generators.UnmanagedStructGenerator", "RadianTools.Generators.UnmanagedStructGenerator\src\RadianTools.Generators.UnmanagedStructGenerator\RadianTools.Generators.UnmanagedStructGenerator.csproj", "{653C8FE9-6DAF-8855-8948-252D7AD26375}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnmanagedStructGenerator", "UnmanagedStructGenerator\src\RadianTools.Generators.UnmanagedStructGenerator\UnmanagedStructGenerator.csproj", "{653C8FE9-6DAF-8855-8948-252D7AD26375}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
