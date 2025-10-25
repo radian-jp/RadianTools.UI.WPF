@@ -37,10 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UnmanagedStructGenerator\src\RadianTools.Generators.UnmanagedStructGenerator\UnmanagedStructGenerator.csproj">
-      <OutputItemType>Analyzer</OutputItemType>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <ProjectReference Include="..\RadianTools.Interop.Windows\src\RadianTools.Interop.Windows\RadianTools.Interop.Windows.csproj" />
   </ItemGroup>
   
 </Project>
