@@ -2,6 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using RadianTools.Interop.Windows;
+using RadianTools.Interop.Windows.Utility;
 
 namespace RadianTools.UI.WPF;
 
