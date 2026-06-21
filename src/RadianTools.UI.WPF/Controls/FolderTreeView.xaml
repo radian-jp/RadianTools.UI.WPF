@@ -18,7 +18,7 @@
         </TreeView.ItemContainerStyle>
 
         <TreeView.ItemTemplate>
-            <HierarchicalDataTemplate ItemsSource="{Binding Childrens}">
+            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
