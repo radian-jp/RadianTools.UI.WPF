@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
@@ -37,10 +37,18 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Management" Version="10.0.9" />
+    <PackageReference Include="VirtualizingWrapPanel" Version="2.5.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RadianTools.Interop.Windows\src\RadianTools.Interop.Windows\RadianTools.Interop.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="rsimage.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   
 </Project>

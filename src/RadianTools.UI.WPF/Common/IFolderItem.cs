@@ -38,6 +38,6 @@ public interface IFolderItem : IDisposable
     /// <summary>直下のファイル一覧を取得します。</summary>
     IEnumerable<IFolderItem> EnumFiles();
 
-    /// <summary>直下の全アイテム（ファイルおよびフォルダ）を取得します。</summary>
+    /// <summary>子を取得します。</summary>
     IEnumerable<IFolderItem> EnumAllChilds();
 }
