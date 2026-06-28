@@ -19,20 +19,9 @@ namespace RadianTools.UI.WPF.Controls;
 public partial class FolderTreeView : UserControl, IDisposable
 {
     /// <summary>
-    /// 選択アイテムが変更された時に発生するルーティングイベント。
-    /// </summary>
-    public static readonly RoutedEvent SelectedItemChangedEvent =
-        EventManager.RegisterRoutedEvent(nameof(SelectedItemChanged), RoutingStrategy.Bubble,
-            typeof(EventHandler<SelectedItemChangedEventArgs>), typeof(FolderTreeView));
-
-    /// <summary>
     /// 選択アイテム変更時のイベントハンドラ。
     /// </summary>
-    public event EventHandler<SelectedItemChangedEventArgs> SelectedItemChanged
-    {
-        add => AddHandler(SelectedItemChangedEvent, value);
-        remove => RemoveHandler(SelectedItemChangedEvent, value);
-    }
+    public event EventHandler<FolderItemEventArgs>? SelectedItemChanged;
 
     private FolderTreeViewModel _vm;
     private int _disposed = 0;
@@ -71,8 +60,9 @@ public partial class FolderTreeView : UserControl, IDisposable
         SelectedItem = _vm.SelectedItem.Item;
         SelectedTreePath = _vm.SelectedItem.Item.TreePath;
 
-        if (SelectedItem != null)
-            RaiseEvent(new SelectedItemChangedEventArgs(SelectedItemChangedEvent, SelectedItem));
+        SelectedItemChanged?.Invoke(
+            this,
+            new FolderItemEventArgs(SelectedItem));
     }
 
     /// <summary>
@@ -121,7 +111,9 @@ public partial class FolderTreeView : UserControl, IDisposable
             _loadingTreeItemVm = current;
         }
 
-        RaiseEvent(new SelectedItemChangedEventArgs(SelectedItemChangedEvent, SelectedItem));
+        SelectedItemChanged?.Invoke(
+            this,
+            new FolderItemEventArgs(SelectedItem));
     }
 
     /// <summary>
@@ -201,12 +193,9 @@ public partial class FolderTreeView : UserControl, IDisposable
     /// <summary>
     /// RootMode変更時
     /// </summary>
-    /// <param name="sender">送信元</param>
-    /// <param name="e">イベント引数</param>
-    private static void OnRootModeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+    partial void OnRootModeChanged()
     {
-        if (sender is FolderTreeView view)
-            view._vm = view.CreateViewModel();
+        this._vm = this.CreateViewModel();
     }
 
     /// <summary>
@@ -254,14 +243,13 @@ public partial class FolderTreeView : UserControl, IDisposable
 }
 
 /// <summary>
-/// アイテム選択変更イベントの引数クラス。
+/// フォルダ選択変更イベントの引数クラス。
 /// </summary>
-public class SelectedItemChangedEventArgs : RoutedEventArgs
+public class FolderItemEventArgs
 {
     public IFolderItem Item { get; }
 
-    public SelectedItemChangedEventArgs(RoutedEvent routedEvent, IFolderItem item)
-        : base(routedEvent)
+    public FolderItemEventArgs(IFolderItem item)
     {
         Item = item;
     }
