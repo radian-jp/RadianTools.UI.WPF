@@ -1,9 +1,9 @@
-﻿using System.Threading;
+﻿namespace RadianTools.UI.WPF.Imaging;
+
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-
-namespace RadianTools.UI.WPF.Imaging;
 
 public interface IThumbnailFactory
 {
