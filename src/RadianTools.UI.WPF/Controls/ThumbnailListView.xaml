@@ -37,7 +37,7 @@
 
                             <TextBlock
                                     Margin="3,0,0,0"
-                                    Text="{Binding FileName}"
+                                    Text="{Binding DisplayName}"
                                     TextWrapping="Wrap"
                                     Width="{Binding ElementName=root, Path=ThumbnailWidth}"                                       
                                     Height="{Binding ElementName=root, Path=TextHeight}"

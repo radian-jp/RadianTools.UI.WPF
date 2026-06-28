@@ -9,23 +9,19 @@ public static class ZipEntryNameEncodingSelector
 {
     private static int _registered;
 
-    public static Encoding DefaultEncoding { get; set; } = Encoding.GetEncoding(932);
+    public static Encoding SystemEncoding { get; set; }
 
-    private static void EnsureCodePagesRegistered()
+    static ZipEntryNameEncodingSelector()
     {
-        if (Interlocked.Exchange(ref _registered, 1) == 1)
-            return;
-
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        SystemEncoding = Encoding.GetEncoding(932);
     }
 
     public static Encoding GetEncoding(string zipPath)
     {
-        EnsureCodePagesRegistered();
-
         return HasUtf8Flag(zipPath)
             ? Encoding.UTF8
-            : DefaultEncoding;
+            : SystemEncoding;
     }
 
     private const uint LocalFileHeaderSignature = 0x04034b50;

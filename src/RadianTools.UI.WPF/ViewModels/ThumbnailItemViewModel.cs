@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
+using RadianTools.UI.WPF.IO;
 
 namespace RadianTools.UI.WPF.ViewModels;
 
@@ -9,17 +10,19 @@ public class ThumbnailItemViewModel : INotifyPropertyChanged
 {
     private ImageSource? _thumbnail;
 
-    public string FilePath { get; set; } = "";
-    public string FileName { get; set; } = "";
+    public IFileEntry? FileEntry { get; set; }
+    public string DisplayName => FileEntry?.DisplayName ?? string.Empty;
 
     public ImageSource? Thumbnail
     {
         get => _thumbnail;
         set
         {
-            if (_thumbnail == value) return;
+            if (_thumbnail == value)
+                return;
+
             _thumbnail = value;
-            Logger.Shared.Debug($"Thumbnail changed: {FileName}, Value={value != null}");
+            Logger.Shared.Debug($"Thumbnail changed: {DisplayName}");
             OnPropertyChanged();
         }
     }

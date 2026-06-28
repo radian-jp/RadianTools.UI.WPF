@@ -1,5 +1,6 @@
 ﻿using DependencyPropertyGenerator;
 using RadianTools.UI.WPF.Imaging;
+using RadianTools.UI.WPF.IO;
 using RadianTools.UI.WPF.Logging;
 using RadianTools.UI.WPF.Storage;
 using RadianTools.UI.WPF.Threading;
@@ -319,21 +320,21 @@ public partial class ThumbnailListView : UserControl
         CancelLoading(null);
         _items.Clear();
 
-        // フォルダが無効または存在しない場合は終了
-        if (string.IsNullOrWhiteSpace(Folder) || !Directory.Exists(Folder))
-            return;
+        //// フォルダが無効または存在しない場合は終了
+        //if (string.IsNullOrWhiteSpace(Folder) || !Directory.Exists(Folder))
+        //    return;
 
         // フォルダ内のファイルを走査
-        foreach (var file in Directory.EnumerateFiles(Folder))
+        var enumerator = FileEnumeratorFactory.Create(Folder);
+        foreach (var file in enumerator.Enumerate())
         {
             // サムネイル生成可能なファイルのみ追加
-            if (!_thumbnailFactory.CanCreate(file))
+            if (!_thumbnailFactory.CanCreate(file.LogicalPath))
                 continue;
 
             _items.Add(new ThumbnailItemViewModel
             {
-                FilePath = file,
-                FileName = Path.GetFileName(file)
+                FileEntry = file
             });
         }
 
@@ -413,8 +414,14 @@ public partial class ThumbnailListView : UserControl
                 if (_disposed || token.IsCancellationRequested || version != _loadVersion)
                     return;
 
+                if (item.FileEntry == null)
+                    return;
+
                 // サムネイルを生成
-                var thumbnail = await _thumbnailFactory.CreateAsync(item.FilePath, size, token).ConfigureAwait(false);
+                var thumbnail = await _thumbnailFactory.CreateAsync(
+                    await item.FileEntry.ReadAllBytesAsync(),
+                    size, 
+                    token).ConfigureAwait(false);
 
                 // 再度キャンセル・バージョンチェック
                 if (_disposed || token.IsCancellationRequested || version != _loadVersion)

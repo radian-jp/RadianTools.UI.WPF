@@ -44,10 +44,18 @@ public sealed class ZipFileEnumerator : IFileEnumerator
         var normalized = Normalize(fullName);
 
         if (string.IsNullOrEmpty(_innerFolder))
-            return true;
+        {
+            return normalized.IndexOf('/') < 0;
+        }
 
-        return normalized.StartsWith(_innerFolder + "/", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, _innerFolder, StringComparison.OrdinalIgnoreCase);
+        if (!normalized.StartsWith(_innerFolder + "/", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // innerFolder/ を除いた残り
+        var relative = normalized.Substring(_innerFolder.Length + 1);
+
+        // さらに '/' があればサブフォルダ配下
+        return relative.IndexOf('/') < 0;
     }
 
     private static string Normalize(string path)
