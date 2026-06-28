@@ -93,9 +93,7 @@ public class WindowsFolderItem : IFolderItem
 
         var children = Task.Run(() =>
         {
-            var t = _pidl.EnumFoldersAsync(cts.Token);
-            t.Wait();
-            return t.Result;
+            return _pidl.EnumFoldersAsync(cts.Token);
         }).GetAwaiter().GetResult();
 
         return children.Select(p => new WindowsFolderItem(this, p));
