@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RadianTools.Interop.Windows\src\RadianTools.Interop.Windows\RadianTools.Interop.Windows.csproj" />
+    <ProjectReference Include="..\..\..\RadianTools.Interop.Windows\src\RadianTools.Interop.Windows\RadianTools.Interop.Windows.csproj" />
   </ItemGroup>
 
   <ItemGroup>
