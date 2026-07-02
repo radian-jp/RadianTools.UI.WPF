@@ -1,21 +1,17 @@
-﻿using RadianTools.Interop.Windows;
-using RadianTools.UI.WPF.Common;
+﻿namespace RadianTools.UI.WPF;
 
-namespace RadianTools.UI.WPF;
+using RadianTools.Interop.Windows;
+using RadianTools.UI.WPF.Common;
 
 /// <summary>
 /// WindowsシェルのPIDL（項目識別子リスト）を保持し、フォルダ情報を抽象化するアイテムクラス。
 /// </summary>
 public class WindowsFolderItem : IFolderItem
 {
-    /// <summary>
-    /// 親フォルダのアイテム。ルートの場合はnull。
-    /// </summary>
+    // <inheritdoc />
     public IFolderItem? Parent { get; }
 
-    /// <summary>
-    /// ツリー構造上のパス表現。
-    /// </summary>
+    // <inheritdoc />
     public string TreePath { get; }
 
     /// <summary>
@@ -55,38 +51,26 @@ public class WindowsFolderItem : IFolderItem
         _icon = _iconFactory.Value.GetIcon(pidl.IconIndex);
     }
 
-    /// <summary>
-    /// ファイルパス
-    /// </summary>
+    // <inheritdoc />
     public string FilePath => IsDummy ? "" : _pidl.FilePath;
 
-    /// <summary>
-    /// 表示名
-    /// </summary>
+    // <inheritdoc />
     public string DisplayName => IsDummy ? "" : _pidl.DisplayName;
 
-    /// <summary>
-    /// 実フォルダかどうか
-    /// </summary>
+    // <inheritdoc />
     public bool IsFolder => IsDummy ? false : _pidl.IsFolder;
 
-    /// <summary>
-    /// サブフォルダ有無
-    /// </summary>
+    // <inheritdoc />
     public bool HasSubFolder => IsDummy ? false : _pidl.HasSubFolder;
 
-    /// <summary>
-    /// アイコン
-    /// </summary>
+    // <inheritdoc />
     public object? Icon => _icon;
     private object? _icon;
 
-    /// <summary>実体を持たないプレースホルダーかどうか。</summary>
+    // <inheritdoc />
     public bool IsDummy { get; }
 
-    /// <summary>
-    /// フォルダ内のサブフォルダ一覧取得
-    /// </summary>
+    // <inheritdoc />
     public IEnumerable<IFolderItem> EnumFolders()
     {
         using var cts = new CancellationTokenSource();
@@ -99,14 +83,14 @@ public class WindowsFolderItem : IFolderItem
         return children.Select(p => new WindowsFolderItem(this, p));
     }
 
-    /// <summary>フォルダ内のファイル一覧を取得します。</summary>
+    // <inheritdoc />
     public IEnumerable<IFolderItem> EnumFiles()
         => _pidl.EnumFiles().Select(p => new WindowsFolderItem(this, p));
 
-    /// <summary>フォルダ内の全てのアイテム（ファイル・フォルダ両方）を取得します。</summary>
+    // <inheritdoc />
     public IEnumerable<IFolderItem> EnumAllChilds()
         => _pidl.EnumAllChilds().Select(p => new WindowsFolderItem(this, p));
 
-    /// <summary>保持しているPIDLリソースを解放します。</summary>
+    // <inheritdoc />
     public void Dispose() => _pidl.Dispose();
 }
