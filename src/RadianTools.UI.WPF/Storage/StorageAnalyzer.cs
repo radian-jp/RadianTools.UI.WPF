@@ -1,9 +1,9 @@
-﻿using System.IO;
+﻿namespace RadianTools.UI.WPF.Storage;
+
+using System.IO;
 using System.Management;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-namespace RadianTools.UI.WPF.Storage;
 
 /// <summary>
 /// 接続方式(MSFT_PhysicalDisk の仕様に準拠)

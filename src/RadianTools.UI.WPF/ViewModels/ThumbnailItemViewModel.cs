@@ -1,10 +1,10 @@
-﻿using RadianTools.UI.WPF.Logging;
+﻿namespace RadianTools.UI.WPF.ViewModels;
+
+using RadianTools.UI.WPF.Logging;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using RadianTools.UI.WPF.IO;
-
-namespace RadianTools.UI.WPF.ViewModels;
 
 public class ThumbnailItemViewModel : INotifyPropertyChanged
 {

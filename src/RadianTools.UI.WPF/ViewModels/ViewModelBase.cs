@@ -1,7 +1,7 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿namespace RadianTools.UI.WPF.ViewModels;
 
-namespace RadianTools.UI.WPF.ViewModels;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 /// <summary>
 /// 全てのViewModelの基底クラス。

@@ -1,7 +1,7 @@
-﻿using System.IO;
-using System.Runtime.CompilerServices;
+﻿namespace RadianTools.UI.WPF.Logging;
 
-namespace RadianTools.UI.WPF.Logging;
+using System.IO;
+using System.Runtime.CompilerServices;
 
 public enum ErrorLevel
 {

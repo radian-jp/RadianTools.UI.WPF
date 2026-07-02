@@ -1,7 +1,7 @@
-﻿using System.Windows;
-using System.Windows.Threading;
+﻿namespace RadianTools.UI.WPF.Threading;
 
-namespace RadianTools.UI.WPF.Threading;
+using System.Windows;
+using System.Windows.Threading;
 
 /// <summary>
 /// WPF UIスレッド安全実行ラッパー

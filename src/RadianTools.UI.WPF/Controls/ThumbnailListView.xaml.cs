@@ -1,5 +1,7 @@
-﻿using DependencyPropertyGenerator;
-using RadianTools.UI.WPF.Common;
+﻿namespace RadianTools.UI.WPF.Controls;
+
+using DependencyPropertyGenerator;
+using RadianTools.Interop.Windows.Utility;
 using RadianTools.UI.WPF.Imaging;
 using RadianTools.UI.WPF.IO;
 using RadianTools.UI.WPF.Logging;
@@ -8,15 +10,11 @@ using RadianTools.UI.WPF.Threading;
 using RadianTools.UI.WPF.ViewModels;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using RadianTools.Interop.Windows.Utility;
-
-namespace RadianTools.UI.WPF.Controls;
 
 /// <summary>
 /// 画像やサムネイルをリスト表示するための ListView コントロール。
