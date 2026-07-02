@@ -1,11 +1,11 @@
-﻿using DependencyPropertyGenerator;
+﻿namespace RadianTools.UI.WPF.Controls;
+
+using DependencyPropertyGenerator;
 using RadianTools.UI.WPF.Common;
 using RadianTools.UI.WPF.Extentions;
 using RadianTools.UI.WPF.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
-
-namespace RadianTools.UI.WPF.Controls;
 
 /// <summary>
 /// ファイルシステムや仮想フォルダ階層を表示・操作するためのツリービューコントロール。
