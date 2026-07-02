@@ -1,4 +1,5 @@
 ﻿using DependencyPropertyGenerator;
+using RadianTools.UI.WPF.Common;
 using RadianTools.UI.WPF.Imaging;
 using RadianTools.UI.WPF.IO;
 using RadianTools.UI.WPF.Logging;
@@ -10,8 +11,10 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using RadianTools.Interop.Windows.Utility;
 
 namespace RadianTools.UI.WPF.Controls;
 
@@ -23,9 +26,18 @@ namespace RadianTools.UI.WPF.Controls;
 [DependencyProperty<double>("ThumbnailHeight", DefaultValue = 120.0)]
 [DependencyProperty<double>("TextHeight", DefaultValue = 35.0)]
 [DependencyProperty<string>("Folder")]
+[DependencyProperty<int>("SelectedIndex", DefaultValue = -1, Coerce = true)]
 [DependencyProperty<int>("LoadThreads", DefaultValueExpression = "System.Environment.ProcessorCount / 2")]
 public partial class ThumbnailListView : UserControl
 {
+    /// <summary>
+    /// 選択アイテム変更時のイベントハンドラ。
+    /// </summary>
+    public event EventHandler<ThumbnailItemEventArgs>? SelectedItemChanged;
+
+    public event EventHandler<ThumbnailItemEventArgs>? ItemDoubleClick;
+
+    public IReadOnlyList<ThumbnailItemViewModel> Items => _items;
     private ObservableCollection<ThumbnailItemViewModel> _items = new();
 
     /// <summary>リスト内の ScrollViewer を保持。</summary>
@@ -49,12 +61,42 @@ public partial class ThumbnailListView : UserControl
     /// <summary>Dispose 済みかどうか。</summary>
     private bool _disposed;
 
-    /// <summary>サムネイル生成ファクトリ。</summary>
-    private readonly IThumbnailFactory _thumbnailFactory = new RsImageThumbnailFactory();
+    /// <summary>画像生成ファクトリ。</summary>
+    private readonly IImageFactory _imageFactory = new RsImageFactory();
 
     /// <summary>スクロール停止後タイマー</summary>
     private readonly DispatcherTimer _scrollStopTimer =
         new() { Interval = TimeSpan.FromMilliseconds(100) };
+
+    /// <summary>
+    /// 選択インデックス変更時
+    /// </summary>
+    /// <param name="oldValue">以前の値</param>
+    /// <param name="newValue">新しい値</param>
+    partial void OnSelectedIndexChanged(int oldValue, int newValue)
+    {
+        if (PART_ListBox.SelectedIndex == newValue)
+            return;
+
+        PART_ListBox.SelectedIndex = newValue;
+
+        if ((uint)newValue < (uint)_items.Count)
+            PART_ListBox.ScrollIntoView(_items[newValue]);
+    }
+
+    /// <summary>
+    /// SelectedIndex範囲制限
+    /// </summary>
+    /// <param name="value">SelectedIndexに指定された値</param>
+    /// <returns>制限後の値</returns>
+    private partial int CoerceSelectedIndex(int? value)
+    {
+        var index = value ?? -1;
+        if (_items.Count == 0)
+            return -1;
+
+        return Math.Clamp(index, 0, _items.Count - 1);
+    }
 
     /// <summary>
     /// スレッド数変更時
@@ -326,10 +368,13 @@ public partial class ThumbnailListView : UserControl
 
         // フォルダ内のファイルを走査
         var enumerator = FileEnumeratorFactory.Create(Folder);
-        foreach (var file in enumerator.Enumerate())
+        var files = enumerator
+            .Enumerate()
+            .OrderBy(x => x.DisplayName, NaturalStringComparer.Shared);
+        foreach (var file in files)
         {
             // サムネイル生成可能なファイルのみ追加
-            if (!_thumbnailFactory.CanCreate(file.LogicalPath))
+            if (!_imageFactory.CanCreate(file.LogicalPath))
                 continue;
 
             _items.Add(new ThumbnailItemViewModel
@@ -337,6 +382,9 @@ public partial class ThumbnailListView : UserControl
                 FileEntry = file
             });
         }
+
+        // SelectedIndex範囲制限
+        CoerceValue(SelectedIndexProperty);
 
         // レイアウト生成を強制する
         PART_ListBox.UpdateLayout();
@@ -418,9 +466,13 @@ public partial class ThumbnailListView : UserControl
                     return;
 
                 // サムネイルを生成
-                var thumbnail = await _thumbnailFactory.CreateAsync(
-                    await item.FileEntry.ReadAllBytesAsync(),
-                    size, 
+                var bytes = await item.FileEntry.ReadAllBytesAsync();
+                if (bytes == null)
+                    return;
+
+                var thumbnail = await _imageFactory.CreateThumbnailAsync(
+                    bytes,
+                    size,
                     token).ConfigureAwait(false);
 
                 // 再度キャンセル・バージョンチェック
@@ -518,7 +570,7 @@ public partial class ThumbnailListView : UserControl
             LoadThreads,
             Environment.ProcessorCount);
 
-        if( !string.IsNullOrEmpty(Folder) )
+        if (!string.IsNullOrEmpty(Folder))
         {
             var diskInfo = DiskAnalyzer.GetDiskInfoFromPath(Folder);
             if (diskInfo.IsOptical ||
@@ -531,5 +583,53 @@ public partial class ThumbnailListView : UserControl
         return _semaphoreCache.GetOrAdd(
             threads,
             static count => new SemaphoreSlim(count, count));
+    }
+
+    private ThumbnailItemEventArgs CreateThumbnailItemEventArgs(ThumbnailItemViewModel item)
+    {
+        int count = _items.Count;
+        var index = _items.IndexOf(item);
+        return new ThumbnailItemEventArgs(count, index, item);
+    }
+
+    private void PART_ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SelectedIndex != PART_ListBox.SelectedIndex)
+            SelectedIndex = PART_ListBox.SelectedIndex;
+
+        var item = PART_ListBox.SelectedItem as ThumbnailItemViewModel;
+        if (item == null)
+            return;
+
+        SelectedItemChanged?.Invoke(this, CreateThumbnailItemEventArgs(item));
+    }
+
+    private void ListBoxItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        var item = PART_ListBox.SelectedItem as ThumbnailItemViewModel;
+        if (item == null)
+            return;
+
+        ItemDoubleClick?.Invoke(this, CreateThumbnailItemEventArgs(item));
+    }
+}
+
+/// <summary>
+/// サムネイル選択変更イベントの引数クラス。
+/// </summary>
+public class ThumbnailItemEventArgs
+{
+    public int TotalCount { get; }
+    public int Index { get; }
+    public ThumbnailItemViewModel Item { get; }
+
+    public ThumbnailItemEventArgs(
+        int totalCount,
+        int index,
+        ThumbnailItemViewModel item)
+    {
+        TotalCount = totalCount;
+        Index = index;
+        Item = item;
     }
 }
