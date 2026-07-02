@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 
 namespace RadianTools.UI.WPF.Imaging;
 
-public sealed class WpfThumbnailFactory : IThumbnailFactory
+public sealed class WpfImageFactory : IImageFactory
 {
     public bool CanCreate(string filePath)
     {
@@ -14,25 +14,9 @@ public sealed class WpfThumbnailFactory : IThumbnailFactory
         return ext is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif" or ".tif" or ".tiff";
     }
 
-    public async Task<ImageSource?> CreateAsync(string filePath, System.Windows.Size thumbnailSize, CancellationToken cancellationToken)
+    public Task<ImageSource?> CreateThumbnailAsync(byte[] bytes, Size thumbnailSize, CancellationToken cancellationToken)
     {
-        Logger.Shared.Debug($"{nameof(WpfThumbnailFactory)}.{nameof(CreateAsync)} start: {filePath}");
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!File.Exists(filePath))
-        {
-            Logger.Shared.Debug($"File not found: {filePath}");
-            return null;
-        }
-
-        var bytes = File.ReadAllBytes(filePath);
-        return await CreateAsync(bytes, thumbnailSize, cancellationToken);
-    }
-
-    public Task<ImageSource?> CreateAsync(byte[] bytes, Size thumbnailSize, CancellationToken cancellationToken)
-    {
-        Logger.Shared.Debug($"{nameof(WpfThumbnailFactory)}.{nameof(CreateAsync)} start: Length={bytes.Length}");
+        Logger.Shared.Debug($"{nameof(WpfImageFactory)}.{nameof(CreateThumbnailAsync)} start: Length={bytes.Length}");
 
         return Task.Run<ImageSource?>(() =>
         {
@@ -84,24 +68,9 @@ public sealed class WpfThumbnailFactory : IThumbnailFactory
         }, cancellationToken);
     }
 
-    public ImageSource? Create(string filePath, System.Windows.Size thumbnailSize)
+    public ImageSource? CreateThumbnail(byte[] bytes, Size thumbnailSize)
     {
-        Logger.Shared.Debug($"{nameof(WpfThumbnailFactory)}.{nameof(CreateAsync)} start: {filePath}");
-
-        if (!File.Exists(filePath))
-        {
-            Logger.Shared.Debug($"File not found: {filePath}");
-            return null;
-        }
-
-        var bytes = File.ReadAllBytes(filePath);
-
-        return Create(bytes, thumbnailSize);
-    }
-
-    public ImageSource? Create(byte[] bytes, Size thumbnailSize)
-    {
-        Logger.Shared.Debug($"{nameof(WpfThumbnailFactory)}.{nameof(CreateAsync)} start: Length={bytes.Length}");
+        Logger.Shared.Debug($"{nameof(WpfImageFactory)}.{nameof(CreateThumbnailAsync)} start: Length={bytes.Length}");
 
         try
         {
@@ -136,6 +105,59 @@ public sealed class WpfThumbnailFactory : IThumbnailFactory
             bitmap.Freeze();
 
             return bitmap;
+        }
+        catch (Exception ex)
+        {
+            Logger.Shared.Debug(ex.ToString());
+            return null;
+        }
+    }
+
+    public Task<ImageSource?> CreateImageAsync(byte[] image, CancellationToken cancellationToken)
+    {
+        Logger.Shared.Debug($"{nameof(WpfImageFactory)}.{nameof(CreateThumbnailAsync)} start: Length={image.Length}");
+
+        return Task.Run<ImageSource?>(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                using var stream = new MemoryStream(image);
+                var decoder = BitmapDecoder.Create(
+                    stream,
+                    BitmapCreateOptions.DelayCreation,
+                    BitmapCacheOption.None);
+
+                var frame = decoder.Frames[0];
+                return frame;
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Shared.Debug(ex.ToString());
+                return null;
+            }
+        }, cancellationToken);
+    }
+
+    public ImageSource? CreateImage(byte[] image)
+    {
+        Logger.Shared.Debug($"{nameof(WpfImageFactory)}.{nameof(CreateThumbnailAsync)} start: Length={image.Length}");
+
+        try
+        {
+            using var stream = new MemoryStream(image);
+            var decoder = BitmapDecoder.Create(
+                stream,
+                BitmapCreateOptions.DelayCreation,
+                BitmapCacheOption.None);
+
+            var frame = decoder.Frames[0];
+            return frame;
         }
         catch (Exception ex)
         {
