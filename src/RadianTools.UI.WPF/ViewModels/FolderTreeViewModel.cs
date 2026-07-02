@@ -1,8 +1,8 @@
-﻿using RadianTools.UI.WPF.Common;
+﻿namespace RadianTools.UI.WPF.ViewModels;
+
+using RadianTools.UI.WPF.Common;
 using System.Collections.ObjectModel;
 using System.IO;
-
-namespace RadianTools.UI.WPF.ViewModels;
 
 /// <summary>
 /// ツリービュー全体のルート階層と選択状態を管理するメインのViewModel。
@@ -18,9 +18,12 @@ public class FolderTreeViewModel : ViewModelBase
     public FolderTreeViewModel(WindowsFolderItemFactory factory)
     {
         _factory = factory;
+
         // ルートアイテムの初期化：ファクトリから取得したアイテムをViewModelでラップする
         RootItems = new ObservableCollection<FolderTreeItemViewModel>(
-            _factory.GetRootItems().Select(
+            _factory.GetRootItems()
+            .DistinctBy(x=>x.DisplayName)
+            .Select(
                 item => new FolderTreeItemViewModel(_factory, item, null)
             )
         );
@@ -77,6 +80,7 @@ public class FolderTreeViewModel : ViewModelBase
         if (current != null)
         {
             SelectedItem = current;
+            current.IsSelected = true;
             return true;
         }
 

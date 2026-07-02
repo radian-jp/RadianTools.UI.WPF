@@ -1,7 +1,9 @@
-﻿using RadianTools.UI.WPF.Common;
-using System.Collections.ObjectModel;
+﻿namespace RadianTools.UI.WPF.ViewModels;
 
-namespace RadianTools.UI.WPF.ViewModels;
+using RadianTools.UI.WPF.Common;
+using System.Collections.ObjectModel;
+using RadianTools.Interop.Windows.Utility;
+using System.IO;
 
 /// <summary>
 /// ツリービューの各階層におけるフォルダアイテムのビューモデル。
@@ -27,8 +29,7 @@ public class FolderTreeItemViewModel : ViewModelBase
     private ObservableCollection<FolderTreeItemViewModel> _children = new();
 
     /// <summary>
-    /// フォルダの展開状態を取得・設定します。
-    /// 展開時に子階層の遅延読み込みをトリガーします。
+    /// フォルダの展開状態
     /// </summary>
     public bool IsExpanded
     {
@@ -40,6 +41,16 @@ public class FolderTreeItemViewModel : ViewModelBase
         }
     }
     private bool _isExpanded;
+
+    /// <summary>
+    /// フォルダ選択有無
+    /// </summary>
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+    private bool _isSelected;
 
     private bool _isLoaded;
 
@@ -77,13 +88,13 @@ public class FolderTreeItemViewModel : ViewModelBase
         try
         {
             // 実データ取得とソート処理
+            // フォルダ優先で名前順に並び替え
             var folders = Item.EnumFolders();
-
-            // 親が存在する場合（ルート以外）はフォルダ優先で名前順に並び替え
-            if (Item.Parent != null && Item.Parent.IsFolder)
-                folders = folders
-                    .OrderBy(x => x.IsFolder)
-                    .ThenBy(x => x.DisplayName);
+            folders = folders
+                .OrderBy(x => string.IsNullOrEmpty(x.FilePath))
+                .ThenBy(x => !Directory.Exists(x.FilePath))
+                .ThenBy(x => x.FilePath, NaturalStringComparer.Shared)
+                .ThenBy(x => x.DisplayName, NaturalStringComparer.Shared);
 
             // 取得したデータを子リストに追加
             foreach (var folder in folders)
