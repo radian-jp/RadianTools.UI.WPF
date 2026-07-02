@@ -3,12 +3,9 @@
 using System.Buffers.Binary;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 public static class ZipEntryNameEncodingSelector
 {
-    private static int _registered;
-
     public static Encoding SystemEncoding { get; set; }
 
     static ZipEntryNameEncodingSelector()
