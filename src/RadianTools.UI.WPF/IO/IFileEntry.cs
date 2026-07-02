@@ -20,13 +20,20 @@ public interface IFileEntry
 
 public static class FileEntryExtensions
 {
-    public static async Task<byte[]> ReadAllBytesAsync(
+    public static async Task<byte[]?> ReadAllBytesAsync(
         this IFileEntry entry,
         CancellationToken token = default)
     {
-        await using var stream = await entry.OpenReadAsync(token).ConfigureAwait(false);
-        using var ms = new MemoryStream();
-        await stream.CopyToAsync(ms, token).ConfigureAwait(false);
-        return ms.ToArray();
+        try
+        {
+            await using var stream = await entry.OpenReadAsync(token).ConfigureAwait(false);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, token).ConfigureAwait(false);
+            return ms.ToArray();
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
     }
 }
