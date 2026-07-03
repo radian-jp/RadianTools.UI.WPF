@@ -4,8 +4,11 @@ using DependencyPropertyGenerator;
 using RadianTools.UI.WPF.Common;
 using RadianTools.UI.WPF.Extentions;
 using RadianTools.UI.WPF.ViewModels;
+using RadianTools.UI.WPF.Collections;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.IO;
 
 /// <summary>
 /// ファイルシステムや仮想フォルダ階層を表示・操作するためのツリービューコントロール。
@@ -23,9 +26,17 @@ public partial class FolderTreeView : UserControl, IDisposable
     /// </summary>
     public event EventHandler<FolderItemEventArgs>? SelectedItemChanged;
 
-    private FolderTreeViewModel _vm;
-    private int _disposed = 0;
     private FolderTreeItemViewModel? _loadingTreeItemVm = null;
+
+    private IFolderItemFactory _factory;
+
+    /// <summary>初期化済みかどうか</summary>
+    private bool _initialized;
+
+    /// <summary>
+    /// ツリーの最上位に表示されるアイテムのコレクション。
+    /// </summary>
+    public ObservableCollection<FolderTreeItemViewModel> _rootItems = new ();
 
     /// <summary>
     /// <see cref="FolderTreeView"/> のインスタンスを初期化します。
@@ -33,33 +44,34 @@ public partial class FolderTreeView : UserControl, IDisposable
     public FolderTreeView()
     {
         InitializeComponent();
-        _vm = CreateViewModel();
+
+        _factory = new WindowsFolderItemFactory { RootMode = RootMode };
+        treeView.ItemsSource = _rootItems;
+
+        CreateRootItems();
 
         Loaded += OnLoaded;
     }
 
     /// <summary>
-    /// ロード時イベント処理
+    /// ロード時イベント
     /// </summary>
     /// <param name="sender">送信元</param>
     /// <param name="e">イベント引数</param>
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(SelectedTreePath) && _vm.SelectItemFromTreePath(SelectedTreePath))
-            treeView.ScrollFromItemData(_vm.SelectedItem);
-    }
-
-    /// <summary>
-    /// ViewModelのプロパティ変更を監視し、Viewと同期します。
-    /// </summary>
-    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (_vm.SelectedItem == null || e.PropertyName != nameof(FolderTreeViewModel.SelectedItem))
+        if (_initialized)
             return;
 
-        SelectedItem = _vm.SelectedItem.Item;
-        SelectedTreePath = _vm.SelectedItem.Item.TreePath;
+        _initialized = true;
 
+        if (!string.IsNullOrEmpty(SelectedTreePath) && SelectItemFromTreePath(SelectedTreePath))
+            treeView.ScrollFromItemData(SelectedItem);
+    }
+
+    partial void OnSelectedItemChanged()
+    {
+        SelectedTreePath = SelectedItem?.TreePath;
         SelectedItemChanged?.Invoke(
             this,
             new FolderItemEventArgs(SelectedItem));
@@ -71,7 +83,7 @@ public partial class FolderTreeView : UserControl, IDisposable
     /// <param name="filePath">選択するターゲットのファイルパス。</param>
     public void SelectItemFromFilePath(string filePath)
     {
-        if (string.IsNullOrEmpty(filePath) || _vm == null)
+        if (string.IsNullOrEmpty(filePath))
             return;
 
         IEnumerable<FolderTreeItemViewModel> drives = Array.Empty<FolderTreeItemViewModel>();
@@ -80,13 +92,13 @@ public partial class FolderTreeView : UserControl, IDisposable
         switch (RootMode)
         {
             case FolderRootMode.DesktopVirtualFolders:
-                var pcNode = _vm.RootItems.FirstOrDefault(item => item.Item.DisplayName == "PC");
+                var pcNode = _rootItems.FirstOrDefault(item => item.Item.DisplayName == "PC");
                 if (pcNode == null) return;
                 if (!pcNode.IsExpanded) pcNode.IsExpanded = true;
                 drives = pcNode.Children;
                 break;
             default:
-                drives = _vm.RootItems;
+                drives = _rootItems;
                 break;
         }
 
@@ -94,7 +106,6 @@ public partial class FolderTreeView : UserControl, IDisposable
         var current = SearchChildFromFilePath(filePath, drives);
         if (current == null) return;
 
-        _vm.SelectedItem = current;
         SelectedItem = current.Item;
         SelectedTreePath = current?.Item.TreePath ?? "";
 
@@ -141,21 +152,21 @@ public partial class FolderTreeView : UserControl, IDisposable
         return null;
     }
 
-    /// <summary>
-    /// リソースを破棄し、イベントハンドラの購読を解除します。
-    /// </summary>
+    #region IDisposable
+
+    private bool _disposed = false;
+
+    /// <inheritdoc/>
     public void Dispose()
     {
-        var disposed = Interlocked.Exchange(ref _disposed, 1);
-        if (disposed == 1)
+        var disposed = Interlocked.Exchange(ref _disposed, true);
+        if (disposed)
             return;
 
-        // イベントハンドラ解除
         Loaded -= OnLoaded;
-        _vm.PropertyChanged -= OnVmPropertyChanged!;
 
         // ViewModelリソース破棄
-        foreach (var item in _vm.RootItems)
+        foreach (var item in _rootItems)
             DisposeRecursive(item);
 
         treeView.DataContext = null;
@@ -173,6 +184,8 @@ public partial class FolderTreeView : UserControl, IDisposable
             DisposeRecursive(child);
     }
 
+    #endregion
+
     /// <summary>
     /// WPFのTreeView選択変更をViewModelへ通知します。
     /// </summary>
@@ -183,11 +196,8 @@ public partial class FolderTreeView : UserControl, IDisposable
         var treeView = (TreeView)sender;
         var vmItem = treeView.SelectedItem as FolderTreeItemViewModel;
 
-        if (_vm != null)
-            _vm.SelectedItem = vmItem;
-
-        this.SelectedItem = vmItem?.Item;
-        this.SelectedTreePath = vmItem?.Item.TreePath ?? "";
+        SelectedItem = vmItem?.Item;
+        SelectedTreePath = vmItem?.Item.TreePath ?? "";
     }
 
     /// <summary>
@@ -195,29 +205,25 @@ public partial class FolderTreeView : UserControl, IDisposable
     /// </summary>
     partial void OnRootModeChanged()
     {
-        this._vm = this.CreateViewModel();
+        CreateRootItems();
     }
 
     /// <summary>
     /// 新しいViewModelインスタンスを生成し、イベント紐付けを行います。
     /// </summary>
-    private FolderTreeViewModel CreateViewModel()
+    private void CreateRootItems()
     {
-        if (_vm != null)
-            _vm.PropertyChanged -= OnVmPropertyChanged!;
+        _factory = new WindowsFolderItemFactory { RootMode = RootMode };
 
-        var factory = new WindowsFolderItemFactory { RootMode = RootMode };
-        var vmNew = new FolderTreeViewModel(factory);
-        treeView.DataContext = vmNew;
+        // ルートアイテムの初期化：ファクトリから取得したアイテムをViewModelでラップする
+        var items = _factory.GetRootItems()
+            .DistinctBy(x => x.DisplayName)
+            .Select(
+                item => new FolderTreeItemViewModel(_factory, item, null)
+            );
 
-        vmNew.PropertyChanged += OnVmPropertyChanged!;
-
-        if (!string.IsNullOrEmpty(SelectedTreePath) && vmNew.SelectItemFromTreePath(SelectedTreePath))
-        {
-            treeView.ScrollFromItemData(vmNew.SelectedItem);
-        }
-
-        return vmNew;
+        _rootItems.Clear();
+        _rootItems.AddRange(items);
     }
 
     /// <summary>
@@ -240,6 +246,48 @@ public partial class FolderTreeView : UserControl, IDisposable
         }
         _loadingTreeItemVm = null;
     }
+
+    /// <summary>
+    /// 指定されたツリーパスに基づいて、該当するアイテムを再帰的に探索し選択状態にします。
+    /// </summary>
+    /// <param name="treePath">対象のツリーパス（ディレクトリ区切り文字で連結された文字列）。</param>
+    /// <returns>アイテムが見つかり、選択が完了した場合は true。</returns>
+    public bool SelectItemFromTreePath(string treePath)
+    {
+        if (string.IsNullOrEmpty(treePath))
+            return false;
+
+        // パスを分解してルートから順に辿る
+        var parts = treePath.Split(Path.DirectorySeparatorChar);
+        var currentItems = _rootItems;
+        FolderTreeItemViewModel? current = null;
+
+        foreach (var part in parts)
+        {
+            // 現在の階層から該当する名前のアイテムを探す
+            var next = currentItems.FirstOrDefault(x => x.Name == part);
+            if (next == null)
+                break; // 途中の階層が見つからない場合は探索終了
+
+            current = next;
+
+            // 探索経路を自動的に展開する
+            current.IsExpanded = true;
+
+            // 次の階層へ移動（子アイテムコレクションを参照）
+            currentItems = current.Children;
+        }
+
+        // 最終到達地点を選択状態にする
+        if (current != null)
+        {
+            SelectedItem = current.Item;
+            current.IsSelected = true;
+            return true;
+        }
+
+        return false;
+    }
 }
 
 /// <summary>
@@ -247,9 +295,9 @@ public partial class FolderTreeView : UserControl, IDisposable
 /// </summary>
 public class FolderItemEventArgs
 {
-    public IFolderItem Item { get; }
+    public IFolderItem? Item { get; }
 
-    public FolderItemEventArgs(IFolderItem item)
+    public FolderItemEventArgs(IFolderItem? item)
     {
         Item = item;
     }

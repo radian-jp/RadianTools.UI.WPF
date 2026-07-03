@@ -5,10 +5,7 @@
     xmlns:vm="clr-namespace:RadianTools.UI.WPF.ViewModels"
     x:Name="root">
 
-    <TreeView
-        x:Name="treeView"
-        ItemsSource="{Binding RootItems}"
-        SelectedItemChanged="TreeView_SelectedItemChanged">
+    <TreeView x:Name="treeView" SelectedItemChanged="TreeView_SelectedItemChanged">
 
         <TreeView.ItemContainerStyle>
             <Style TargetType="TreeViewItem">
