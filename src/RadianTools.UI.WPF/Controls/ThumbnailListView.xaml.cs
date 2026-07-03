@@ -26,7 +26,7 @@ using System.Windows.Threading;
 [DependencyProperty<string>("Folder")]
 [DependencyProperty<int>("SelectedIndex", DefaultValue = -1, Coerce = true)]
 [DependencyProperty<int>("LoadThreads", DefaultValueExpression = "System.Environment.ProcessorCount / 2")]
-public partial class ThumbnailListView : UserControl
+public partial class ThumbnailListView : UserControl, IDisposable
 {
     /// <summary>
     /// 選択アイテム変更時のイベントハンドラ。
@@ -41,8 +41,8 @@ public partial class ThumbnailListView : UserControl
     /// <summary>リスト内の ScrollViewer を保持。</summary>
     private ScrollViewer? _scrollViewer;
 
-    /// <summary>初回ロードが完了したかどうか。</summary>
-    private bool _initialLoadDone;
+    /// <summary>初期化済みかどうか</summary>
+    private bool _initialized;
 
     /// <summary>ロード処理に使用する CancellationTokenSource。</summary>
     private CancellationTokenSource? _loadCts;
@@ -55,9 +55,6 @@ public partial class ThumbnailListView : UserControl
 
     /// <summary>スレッド数毎セマフォのキャッシュ。（大した数にはならないのでDisposeしない設計）</summary>
     private static readonly ConcurrentDictionary<int, SemaphoreSlim> _semaphoreCache = new();
-
-    /// <summary>Dispose 済みかどうか。</summary>
-    private bool _disposed;
 
     /// <summary>画像生成ファクトリ。</summary>
     private readonly IImageFactory _imageFactory = new RsImageFactory();
@@ -120,10 +117,9 @@ public partial class ThumbnailListView : UserControl
 
         PART_ListBox.ItemsSource = _items;
 
-        Loaded += ThumbnailListView_Loaded;
-        Unloaded += ThumbnailListView_Unloaded;
-
         _scrollStopTimer.Tick += OnScrollStopped;
+
+        Loaded += OnLoaded;
     }
 
     /// <summary>
@@ -181,10 +177,17 @@ public partial class ThumbnailListView : UserControl
     }
 
     /// <summary>
-    /// ロード後イベント
+    /// ロード時イベント
     /// </summary>
-    private async void ThumbnailListView_Loaded(object sender, RoutedEventArgs e)
+    /// <param name="sender">送信元</param>
+    /// <param name="e">イベント引数</param>
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (_initialized)
+            return;
+
+        _initialized = true;
+
         // ListBox を取得
         var listBox = PART_ListBox;
 
@@ -201,25 +204,34 @@ public partial class ThumbnailListView : UserControl
             _scrollViewer.ScrollChanged += ScrollViewer_ScrollChanged;
         }
 
-        // 初回ロード処理（1 回だけ実行）
-        if (!_initialLoadDone)
-        {
-            _initialLoadDone = true;
-            Logger.Shared.Debug("Initial LoadVisible_itemsAsync called");
-            await LoadVisibleItemsAsync();
-        }
+        Logger.Shared.Debug("Initial LoadVisible_itemsAsync called");
+        await LoadVisibleItemsAsync();
     }
 
-    /// <summary>
-    /// アンロード後イベント
-    /// </summary>
-    private void ThumbnailListView_Unloaded(object sender, RoutedEventArgs e)
+    #region IDisposable
+
+    /// <summary>Dispose 済みかどうか。</summary>
+    private bool _disposed;
+
+    /// <inheritdoc/>
+    public void Dispose()
     {
+        var disposed = Interlocked.Exchange(ref _disposed, true);
+        if (disposed)
+            return;
+
+        Loaded -= OnLoaded;
+
+        _scrollStopTimer.Stop();
+        _scrollStopTimer.Tick -= OnScrollStopped;
+
         if (_scrollViewer != null)
             _scrollViewer.ScrollChanged -= ScrollViewer_ScrollChanged;
 
-        _scrollStopTimer.Stop();
+        CancelLoading(null);
     }
+
+    #endregion
 
     /// <summary>
     /// 指定した DependencyObject の子ツリーを探索し、<see cref="ScrollViewer"/> を発見します。
@@ -525,27 +537,6 @@ public partial class ThumbnailListView : UserControl
         catch (ObjectDisposedException)
         {
         }
-    }
-
-    /// <summary>
-    /// リソースを解放し、現在のロード処理をキャンセルします。
-    /// </summary>
-    public void Dispose()
-    {
-        var disposed = Interlocked.Exchange(ref _disposed, true);
-        if (disposed)
-            return;
-
-        _scrollStopTimer.Stop();
-        _scrollStopTimer.Tick -= OnScrollStopped;
-
-        Loaded -= ThumbnailListView_Loaded;
-        Unloaded -= ThumbnailListView_Unloaded;
-
-        if (_scrollViewer != null)
-            _scrollViewer.ScrollChanged -= ScrollViewer_ScrollChanged;
-
-        CancelLoading(null);
     }
 
     /// <summary>
