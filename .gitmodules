@@ -1,0 +1,3 @@
+[submodule "src/RadianTools.Interop.Windows"]
+	path = src/RadianTools.Interop.Windows
+	url = https://github.com/radian-jp/RadianTools.Interop.Windows.git

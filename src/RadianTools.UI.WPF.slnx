@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="RadianTools.Interop.Windows/src/RadianTools.Interop.Windows/RadianTools.Interop.Windows.csproj" />
+  <Project Path="RadianTools.Interop.Windows/src/UnmanagedStructGenerator/src/RadianTools.Generators.UnmanagedStructGenerator/UnmanagedStructGenerator.csproj" />
+  <Project Path="RadianTools.UI.WPF.Sample/RadianTools.UI.WPF.Sample.csproj">
+    <BuildDependency Project="RadianTools.UI.WPF/RadianTools.UI.WPF.csproj" />
+  </Project>
+  <Project Path="RadianTools.UI.WPF/RadianTools.UI.WPF.csproj" />
+</Solution>
