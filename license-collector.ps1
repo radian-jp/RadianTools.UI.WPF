@@ -152,21 +152,25 @@ function Get-GitHubRepoInfo {
 # ================================
 function Get-GitHubLicense {
     param($repoInfo)
-
     if (-not $repoInfo) { return $null }
 
-    $candidates = @(
-        "LICENSE",
-        "LICENSE.txt",
-        "LICENSE.md",
-        "COPYING"
-    )
+    # 1. APIを使ってリポジトリルートのファイル一覧を取得
+    $treeUrl = "https://api.github.com/repos/$($repoInfo.Path)/contents/?ref=$($repoInfo.DefaultBranch)"
+    try {
+        $files = Invoke-RestMethod $treeUrl -Headers $Headers -ErrorAction Stop
+        
+        # 2. ライセンスファイルに該当しそうな名前を探す（大文字小文字を区別せずマッチ）
+        $licenseFile = $files | Where-Object { 
+            $_.name -match "^(LICENSE|COPYING)(\.md|\.txt|\.text|)$" 
+        } | Select-Object -First 1
 
-    foreach ($file in $candidates) {
-        $url = "https://raw.githubusercontent.com/$($repoInfo.Path)/$($repoInfo.DefaultBranch)/$file"
-        try {
-            return Invoke-RestMethod $url -ErrorAction Stop
-        } catch {}
+        if ($null -ne $licenseFile) {
+            Write-Host "  [i] Found license file: $($licenseFile.name)" -ForegroundColor Cyan
+            # 3. 特定したファイルパスにアクセス
+            return Invoke-RestMethod $licenseFile.download_url -ErrorAction Stop
+        }
+    } catch {
+        Write-Host "  [!] Failed to list files via API: $($repoInfo.Path)" -ForegroundColor Yellow
     }
 
     return $null
