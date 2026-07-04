@@ -5,7 +5,7 @@
 機能:
 - csprojからNuGet依存関係を取得
 - NuGet metadataからGitHub repositoryを特定
-- GitHubからLICENSEファイルを収集
+- GitHubからデフォルトブランチを自動判定しLICENSEファイルを収集
 - Markdown or 個別ファイルに出力
 - System / Microsoft系はデフォルト除外
 
@@ -43,6 +43,16 @@ param(
 # ================================
 # $OutputMode = "single"
 $OutputMode = "split"
+
+# ================================
+# GitHub API Header
+# ================================
+$Headers = @{
+    "Accept" = "application/vnd.github.v3+json"
+}
+if ($GitHubToken) {
+    $Headers.Add("Authorization", "token $GitHubToken")
+}
 
 # ================================
 # csproj resolve
@@ -110,17 +120,27 @@ function Get-NuGetMetadata {
 }
 
 # ================================
-# GitHub repo
+# GitHub repo & Default Branch
 # ================================
-function Get-GitHubRepoFromNuSpec {
+function Get-GitHubRepoInfo {
     param($nuspec)
 
     if (-not $nuspec) { return $null }
 
     try {
-        $repo = $nuspec.package.metadata.repository.url
-        if ($repo -and $repo -match "github.com") {
-            return $repo -replace "\.git$",""
+        $repoUrl = $nuspec.package.metadata.repository.url
+        if ($repoUrl -and $repoUrl -match "github.com/(?<owner>[^/]+)/(?<repo>[^/.]+)") {
+            $owner = $Matches.owner
+            $repo = $Matches.repo
+            
+            # APIからデフォルトブランチを取得
+            $apiUrl = "https://api.github.com/repos/$owner/$repo"
+            $repoData = Invoke-RestMethod $apiUrl -Headers $Headers -ErrorAction SilentlyContinue
+            
+            return [PSCustomObject]@{
+                Path = "$owner/$repo"
+                DefaultBranch = if ($repoData) { $repoData.default_branch } else { "master" }
+            }
         }
     } catch {}
 
@@ -131,11 +151,9 @@ function Get-GitHubRepoFromNuSpec {
 # LICENSE fetch
 # ================================
 function Get-GitHubLicense {
-    param([string]$repoUrl)
+    param($repoInfo)
 
-    if (-not $repoUrl) { return $null }
-
-    $repoPath = $repoUrl -replace "https://github.com/", ""
+    if (-not $repoInfo) { return $null }
 
     $candidates = @(
         "LICENSE",
@@ -145,9 +163,7 @@ function Get-GitHubLicense {
     )
 
     foreach ($file in $candidates) {
-
-        $url = "https://raw.githubusercontent.com/$repoPath/master/$file"
-
+        $url = "https://raw.githubusercontent.com/$($repoInfo.Path)/$($repoInfo.DefaultBranch)/$file"
         try {
             return Invoke-RestMethod $url -ErrorAction Stop
         } catch {}
@@ -176,13 +192,13 @@ foreach ($pkg in $packages) {
     Write-Host "Processing $($pkg.Id) $($pkg.Version)..."
 
     $nuspec = Get-NuGetMetadata $pkg.Id $pkg.Version
-    $repo = Get-GitHubRepoFromNuSpec $nuspec
-    $license = Get-GitHubLicense $repo
+    $repoInfo = Get-GitHubRepoInfo $nuspec
+    $license = Get-GitHubLicense $repoInfo
 
     $result += [PSCustomObject]@{
         Package = $pkg.Id
         Version = $pkg.Version
-        Repo    = $repo
+        Repo    = "https://github.com/$($repoInfo.Path)"
         License = $license
     }
 }
@@ -192,7 +208,6 @@ foreach ($pkg in $packages) {
 # ================================
 if ($OutputMode -eq "single") {
 
-    # ★ StringBuilder化
     $sb = New-Object System.Text.StringBuilder
 
     [void]$sb.AppendLine("# Third Party Licenses")
@@ -205,15 +220,12 @@ if ($OutputMode -eq "single") {
         [void]$sb.AppendLine("Repo: $($r.Repo)")
         [void]$sb.AppendLine("")
 
-        # code block（安全）
         [void]$sb.AppendLine('```text')
-
         if ($r.License) {
             [void]$sb.AppendLine($r.License)
         } else {
             [void]$sb.AppendLine("LICENSE NOT FOUND")
         }
-
         [void]$sb.AppendLine('```')
         [void]$sb.AppendLine("")
     }
